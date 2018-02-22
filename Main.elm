@@ -24,7 +24,7 @@ init =
 
 initialModel : Model
 initialModel =
-    { apiResponse = { secretword = "", hint = "" }
+    { apiResponse = [ { name = "", capital = "" } ]
     , buttons = []
     , guessLetters = []
     , numOfLives = 6
@@ -32,7 +32,7 @@ initialModel =
 
 
 type alias Model =
-    { apiResponse : ApiResponse
+    { apiResponse : List ApiResponse
     , buttons : List Button
     , guessLetters : List BlankSpace
     , numOfLives : Int
@@ -40,15 +40,15 @@ type alias Model =
 
 
 type alias ApiResponse =
-    { secretword : String
-    , hint : String
+    { name : String
+    , capital : String
     }
 
 
 defaultApi : ApiResponse
 defaultApi =
-    { secretword = ""
-    , hint = ""
+    { name = ""
+    , capital = ""
     }
 
 
@@ -78,6 +78,7 @@ view model =
     div []
         [ h1 [] [ text "Hangman Game" ]
         , div [] (renderbutton defaultButtons)
+        , button [ onClick FetchWord ] [ text "press me!" ]
         ]
 
 
@@ -86,11 +87,59 @@ renderbutton buttons =
     List.map (\everybutton -> button [] [ text everybutton.letter ]) buttons
 
 
+
+-- requestCmd: Cmd Msg
+
+
+requestCmd =
+    Http.send ReceiveStates getRequest
+
+
+getRequest =
+    let
+        url =
+            "https://locationsng-api.herokuapp.com/api/v1/states"
+    in
+    Http.get url stateListDecoder
+
+
+statesDecoder : Json.Decoder ApiResponse
+statesDecoder =
+    Json.map2 ApiResponse
+        (Json.field "name" Json.string)
+        (Json.field "capital" Json.string)
+
+
+stateListDecoder : Json.Decoder (List ApiResponse)
+stateListDecoder =
+    Json.list statesDecoder
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+        FetchWord ->
+            ( model, requestCmd )
+
+        GuessLetter ->
+            ( model, Cmd.none )
+
+        ReceiveStates (Ok apiResponse) ->
+            let
+                log =
+                    Debug.log "states" apiResponse
+            in
+            ( model, Cmd.none )
+
+        ReceiveStates (Err err) ->
+            let
+                log =
+                    Debug.log "err" err
+            in
+            ( model, Cmd.none )
 
 
 type Msg
     = FetchWord
     | GuessLetter
+    | ReceiveStates (Result Http.Error (List ApiResponse))

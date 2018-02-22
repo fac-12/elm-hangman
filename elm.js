@@ -9033,10 +9033,6 @@ var _elm_lang$http$Http$StringPart = F2(
 	});
 var _elm_lang$http$Http$stringPart = _elm_lang$http$Http$StringPart;
 
-var _user$project$Main$update = F2(
-	function (msg, model) {
-		return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
-	});
 var _user$project$Main$renderbutton = function (buttons) {
 	return A2(
 		_elm_lang$core$List$map,
@@ -9165,6 +9161,68 @@ var _user$project$Main$defaultButtons = function () {
 		},
 		alphabet);
 }();
+var _user$project$Main$defaultApi = {name: '', capital: ''};
+var _user$project$Main$initialModel = {
+	apiResponse: {
+		ctor: '::',
+		_0: {name: '', capital: ''},
+		_1: {ctor: '[]'}
+	},
+	buttons: {ctor: '[]'},
+	guessLetters: {ctor: '[]'},
+	numOfLives: 6
+};
+var _user$project$Main$init = {ctor: '_Tuple2', _0: _user$project$Main$initialModel, _1: _elm_lang$core$Platform_Cmd$none};
+var _user$project$Main$Model = F4(
+	function (a, b, c, d) {
+		return {apiResponse: a, buttons: b, guessLetters: c, numOfLives: d};
+	});
+var _user$project$Main$ApiResponse = F2(
+	function (a, b) {
+		return {name: a, capital: b};
+	});
+var _user$project$Main$statesDecoder = A3(
+	_elm_lang$core$Json_Decode$map2,
+	_user$project$Main$ApiResponse,
+	A2(_elm_lang$core$Json_Decode$field, 'name', _elm_lang$core$Json_Decode$string),
+	A2(_elm_lang$core$Json_Decode$field, 'capital', _elm_lang$core$Json_Decode$string));
+var _user$project$Main$stateListDecoder = _elm_lang$core$Json_Decode$list(_user$project$Main$statesDecoder);
+var _user$project$Main$getRequest = function () {
+	var url = 'https://locationsng-api.herokuapp.com/api/v1/states';
+	return A2(_elm_lang$http$Http$get, url, _user$project$Main$stateListDecoder);
+}();
+var _user$project$Main$Button = F2(
+	function (a, b) {
+		return {letter: a, guess: b};
+	});
+var _user$project$Main$BlankSpace = F2(
+	function (a, b) {
+		return {letter: a, display: b};
+	});
+var _user$project$Main$ReceiveStates = function (a) {
+	return {ctor: 'ReceiveStates', _0: a};
+};
+var _user$project$Main$requestCmd = A2(_elm_lang$http$Http$send, _user$project$Main$ReceiveStates, _user$project$Main$getRequest);
+var _user$project$Main$update = F2(
+	function (msg, model) {
+		var _p0 = msg;
+		switch (_p0.ctor) {
+			case 'FetchWord':
+				return {ctor: '_Tuple2', _0: model, _1: _user$project$Main$requestCmd};
+			case 'GuessLetter':
+				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+			default:
+				if (_p0._0.ctor === 'Ok') {
+					var log = A2(_elm_lang$core$Debug$log, 'states', _p0._0._0);
+					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+				} else {
+					var log = A2(_elm_lang$core$Debug$log, 'err', _p0._0._0);
+					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+				}
+		}
+	});
+var _user$project$Main$GuessLetter = {ctor: 'GuessLetter'};
+var _user$project$Main$FetchWord = {ctor: 'FetchWord'};
 var _user$project$Main$view = function (model) {
 	return A2(
 		_elm_lang$html$Html$div,
@@ -9185,18 +9243,25 @@ var _user$project$Main$view = function (model) {
 					_elm_lang$html$Html$div,
 					{ctor: '[]'},
 					_user$project$Main$renderbutton(_user$project$Main$defaultButtons)),
-				_1: {ctor: '[]'}
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_elm_lang$html$Html$button,
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html_Events$onClick(_user$project$Main$FetchWord),
+							_1: {ctor: '[]'}
+						},
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html$text('press me!'),
+							_1: {ctor: '[]'}
+						}),
+					_1: {ctor: '[]'}
+				}
 			}
 		});
 };
-var _user$project$Main$defaultApi = {secretword: '', hint: ''};
-var _user$project$Main$initialModel = {
-	apiResponse: {secretword: '', hint: ''},
-	buttons: {ctor: '[]'},
-	guessLetters: {ctor: '[]'},
-	numOfLives: 6
-};
-var _user$project$Main$init = {ctor: '_Tuple2', _0: _user$project$Main$initialModel, _1: _elm_lang$core$Platform_Cmd$none};
 var _user$project$Main$main = _elm_lang$html$Html$program(
 	{
 		init: _user$project$Main$init,
@@ -9204,24 +9269,6 @@ var _user$project$Main$main = _elm_lang$html$Html$program(
 		update: _user$project$Main$update,
 		subscriptions: _elm_lang$core$Basics$always(_elm_lang$core$Platform_Sub$none)
 	})();
-var _user$project$Main$Model = F4(
-	function (a, b, c, d) {
-		return {apiResponse: a, buttons: b, guessLetters: c, numOfLives: d};
-	});
-var _user$project$Main$ApiResponse = F2(
-	function (a, b) {
-		return {secretword: a, hint: b};
-	});
-var _user$project$Main$Button = F2(
-	function (a, b) {
-		return {letter: a, guess: b};
-	});
-var _user$project$Main$BlankSpace = F2(
-	function (a, b) {
-		return {letter: a, display: b};
-	});
-var _user$project$Main$GuessLetter = {ctor: 'GuessLetter'};
-var _user$project$Main$FetchWord = {ctor: 'FetchWord'};
 
 var Elm = {};
 Elm['Main'] = Elm['Main'] || {};
