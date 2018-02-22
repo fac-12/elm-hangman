@@ -24,7 +24,7 @@ init =
 
 initialModel : Model
 initialModel =
-    { apiResponse = ""
+    { apiResponse = { secretword = "", hint = "" }
     , buttons = []
     , guessLetters = []
     , numOfLives = 6
@@ -74,13 +74,21 @@ type alias BlankSpace =
 
 
 view : Model -> Html Msg
-view =
-    []
+view model =
+    div []
+        [ h1 [] [ text "Hangman Game" ]
+        , div [] (renderbutton defaultButtons)
+        ]
+
+
+renderbutton : List Button -> List (Html Msg)
+renderbutton buttons =
+    List.map (\everybutton -> button [] [ text everybutton.letter ]) buttons
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update =
-    []
+update msg model =
+    ( model, Cmd.none )
 
 
 type Msg
