@@ -5,6 +5,8 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http exposing (..)
 import Json.Decode as Json
+import Random
+
 
 
 main : Program Never Model Msg
@@ -28,6 +30,7 @@ initialModel =
     , buttons = []
     , guessLetters = []
     , numOfLives = 6
+    , currentWord = ""
     }
 
 
@@ -36,6 +39,7 @@ type alias Model =
     , buttons : List Button
     , guessLetters : List BlankSpace
     , numOfLives : Int
+    , currentWord : String
     }
 
 
@@ -124,12 +128,13 @@ update msg model =
         GuessLetter ->
             ( model, Cmd.none )
 
-        ReceiveStates (Ok apiResponse) ->
-            let
-                log =
-                    Debug.log "states" apiResponse
+        ReceiveStates (Ok listOfStates) ->
+            let 
+                log = 
+                    Debug.log "states" listOfStates
             in
-            ( model, Cmd.none )
+              
+              ( { model | apiResponse = listOfStates } , Random.generate StateIndex (Random.int 0 (List.length listOfStates)) )
 
         ReceiveStates (Err err) ->
             let
@@ -138,8 +143,25 @@ update msg model =
             in
             ( model, Cmd.none )
 
+        StateIndex index  ->
+
+            let log = 
+                Debug.log "index" model
+                newWord = callMeMaybe (List.head (List.drop index model.apiResponse))
+            in
+
+            ( { model | currentWord = newWord.name } , Cmd.none )
+
+
+callMeMaybe : Maybe ApiResponse -> ApiResponse
+callMeMaybe maybeThing =
+    case maybeThing of 
+        Just singleState -> singleState
+        Nothing -> defaultApi
+
 
 type Msg
     = FetchWord
     | GuessLetter
     | ReceiveStates (Result Http.Error (List ApiResponse))
+    | StateIndex Int 
