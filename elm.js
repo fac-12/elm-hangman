@@ -13508,6 +13508,9 @@ var _elm_lang$http$Http$StringPart = F2(
 	});
 var _elm_lang$http$Http$stringPart = _elm_lang$http$Http$StringPart;
 
+var _user$project$Main$checkIfClicked = function (bool) {
+	return bool ? 'letter-button button-disabled' : 'letter-button';
+};
 var _user$project$Main$displayLetterOrNot = F2(
 	function (model, letter) {
 		var log = A2(
@@ -13689,7 +13692,7 @@ var _user$project$Main$initialModel = {
 		_0: {name: '', capital: ''},
 		_1: {ctor: '[]'}
 	},
-	buttons: {ctor: '[]'},
+	buttons: _user$project$Main$defaultButtons,
 	numOfLives: 6,
 	currentWord: '',
 	hint: '',
@@ -13717,8 +13720,8 @@ var _user$project$Main$Button = F2(
 	function (a, b) {
 		return {letter: a, guess: b};
 	});
-var _user$project$Main$UpdateGuess = function (a) {
-	return {ctor: 'UpdateGuess', _0: a};
+var _user$project$Main$ButtonClicked = function (a) {
+	return {ctor: 'ButtonClicked', _0: a};
 };
 var _user$project$Main$renderbutton = function (buttons) {
 	return A2(
@@ -13729,8 +13732,17 @@ var _user$project$Main$renderbutton = function (buttons) {
 				{
 					ctor: '::',
 					_0: _elm_lang$html$Html_Events$onClick(
-						_user$project$Main$UpdateGuess(everybutton.letter)),
-					_1: {ctor: '[]'}
+						_user$project$Main$ButtonClicked(everybutton)),
+					_1: {
+						ctor: '::',
+						_0: _elm_lang$html$Html_Attributes$class(
+							_user$project$Main$checkIfClicked(everybutton.guess)),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html_Attributes$disabled(everybutton.guess),
+							_1: {ctor: '[]'}
+						}
+					}
 				},
 				{
 					ctor: '::',
@@ -13798,12 +13810,22 @@ var _user$project$Main$update = F2(
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			default:
+				var _p3 = _p1._0;
+				var updatedButtonList = A2(
+					_elm_lang$core$List$map,
+					function (button) {
+						return _elm_lang$core$Native_Utils.eq(button.letter, _p3.letter) ? _elm_lang$core$Native_Utils.update(
+							button,
+							{guess: true}) : button;
+					},
+					model.buttons);
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							guess: A2(_elm_lang$core$Basics_ops['++'], model.guess, _p1._0)
+							guess: A2(_elm_lang$core$Basics_ops['++'], model.guess, _p3.letter),
+							buttons: updatedButtonList
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
@@ -13838,7 +13860,7 @@ var _user$project$Main$view = function (model) {
 					_0: A2(
 						_elm_lang$html$Html$div,
 						{ctor: '[]'},
-						_user$project$Main$renderbutton(_user$project$Main$defaultButtons)),
+						_user$project$Main$renderbutton(model.buttons)),
 					_1: {
 						ctor: '::',
 						_0: A2(
@@ -13870,7 +13892,7 @@ var _user$project$Main$main = _elm_lang$html$Html$program(
 var Elm = {};
 Elm['Main'] = Elm['Main'] || {};
 if (typeof _user$project$Main$main !== 'undefined') {
-    _user$project$Main$main(Elm['Main'], 'Main', {"types":{"unions":{"Dict.LeafColor":{"args":[],"tags":{"LBBlack":[],"LBlack":[]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":["Dict.LeafColor"]}},"Main.Msg":{"args":[],"tags":{"ReceiveStates":["Result.Result Http.Error (List Main.ApiResponse)"],"FetchWord":[],"UpdateGuess":["String"],"StateIndex":["Int"]}},"Dict.NColor":{"args":[],"tags":{"BBlack":[],"Red":[],"NBlack":[],"Black":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String"],"NetworkError":[],"Timeout":[],"BadStatus":["Http.Response String"],"BadPayload":["String","Http.Response String"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}},"aliases":{"Http.Response":{"args":["body"],"type":"{ url : String , status : { code : Int, message : String } , headers : Dict.Dict String String , body : body }"},"Main.ApiResponse":{"args":[],"type":"{ name : String, capital : String }"}},"message":"Main.Msg"},"versions":{"elm":"0.18.0"}});
+    _user$project$Main$main(Elm['Main'], 'Main', {"types":{"unions":{"Dict.LeafColor":{"args":[],"tags":{"LBBlack":[],"LBlack":[]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":["Dict.LeafColor"]}},"Main.Msg":{"args":[],"tags":{"ReceiveStates":["Result.Result Http.Error (List Main.ApiResponse)"],"FetchWord":[],"ButtonClicked":["Main.Button"],"StateIndex":["Int"]}},"Dict.NColor":{"args":[],"tags":{"BBlack":[],"Red":[],"NBlack":[],"Black":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String"],"NetworkError":[],"Timeout":[],"BadStatus":["Http.Response String"],"BadPayload":["String","Http.Response String"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}},"aliases":{"Http.Response":{"args":["body"],"type":"{ url : String , status : { code : Int, message : String } , headers : Dict.Dict String String , body : body }"},"Main.Button":{"args":[],"type":"{ letter : String, guess : Bool }"},"Main.ApiResponse":{"args":[],"type":"{ name : String, capital : String }"}},"message":"Main.Msg"},"versions":{"elm":"0.18.0"}});
 }
 
 if (typeof define === "function" && define['amd'])

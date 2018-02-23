@@ -37,7 +37,7 @@ type alias Model =
 initialModel : Model
 initialModel =
     { apiResponse = [ { name = "", capital = "" } ]
-    , buttons = []
+    , buttons = defaultButtons
     , numOfLives = 6
     , currentWord = ""
     , hint = ""
@@ -78,30 +78,48 @@ view model =
     div []
         [ h1 [] [ text "Hangman Game" ]
         , div [] <| renderGuess model <| String.toList model.currentWord
-        , div [] (renderbutton defaultButtons)
+        , div [] (renderbutton model.buttons)
         , button [ onClick FetchWord ] [ text "Reset Game" ]
         ]
 
 
 renderGuess : Model -> List Char -> List (Html Msg)
 renderGuess model guess =
-    List.map (\letter -> p [ class "guessLetter" ] [ 
-                            span [ class <| displayLetterOrNot model letter ] [text <| toString letter ]
-                            ]) guess
-
+    List.map
+        (\letter ->
+            p [ class "guessLetter" ]
+                [ span [ class <| displayLetterOrNot model letter ] [ text <| toString letter ]
+                ]
+        )
+        guess
 
 
 displayLetterOrNot : Model -> Char -> String
-displayLetterOrNot model letter = 
-    let log1 = Debug.log "letter" (String.fromChar letter)
-        log = Debug.log "regex" (Regex.contains (Regex.regex <| toString letter) model.guess)
-    in 
-        if Regex.contains (Regex.regex <| String.fromChar letter) model.guess then "display" else "displayNone" 
+displayLetterOrNot model letter =
+    let
+        log1 =
+            Debug.log "letter" (String.fromChar letter)
+
+        log =
+            Debug.log "regex" (Regex.contains (Regex.regex <| toString letter) model.guess)
+    in
+    if Regex.contains (Regex.regex <| String.fromChar letter) model.guess then
+        "display"
+    else
+        "displayNone"
 
 
 renderbutton : List Button -> List (Html Msg)
 renderbutton buttons =
-    List.map (\everybutton -> button [ onClick <| UpdateGuess everybutton.letter ] [ text everybutton.letter ]) buttons
+    List.map (\everybutton -> button [ onClick <| ButtonClicked everybutton, class <| checkIfClicked everybutton.guess, disabled everybutton.guess ] [ text everybutton.letter ]) buttons
+
+
+checkIfClicked : Bool -> String
+checkIfClicked bool =
+    if bool then
+        "letter-button button-disabled"
+    else
+        "letter-button"
 
 
 
@@ -168,9 +186,19 @@ update msg model =
             in
             ( { model | currentWord = String.toUpper newWord.name, hint = newWord.capital }, Cmd.none )
 
-        UpdateGuess letter -> 
-
-            ( { model | guess = model.guess ++ letter }, Cmd.none )
+        ButtonClicked clickedButton ->
+            let
+                updatedButtonList =
+                    List.map
+                        (\button ->
+                            if button.letter == clickedButton.letter then
+                                { button | guess = True }
+                            else
+                                button
+                        )
+                        model.buttons
+            in
+            ( { model | guess = model.guess ++ clickedButton.letter, buttons = updatedButtonList }, Cmd.none )
 
 
 callMeMaybe : Maybe ApiResponse -> ApiResponse
@@ -187,4 +215,4 @@ type Msg
     = FetchWord
     | ReceiveStates (Result Http.Error (List ApiResponse))
     | StateIndex Int
-    | UpdateGuess String
+    | ButtonClicked Button

@@ -2,7 +2,7 @@
   border-bottom: 1px solid black;
   width: 10px;
   display: inline-block;
-  margin: 5px; 
+  margin: 5px;
 }
 
 .displayNone {
@@ -11,4 +11,18 @@
 
 .display {
 	display :inline-block;
+}
+
+.letter-button {
+  border: none;
+  background: green;
+  color: white;
+  padding: 5px;
+  margin: 10px;
+  cursor: pointer;
+}
+
+.button-disabled {
+  background: red;
+  cursor: not-allowed;
 }
