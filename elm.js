@@ -13508,28 +13508,47 @@ var _elm_lang$http$Http$StringPart = F2(
 	});
 var _elm_lang$http$Http$stringPart = _elm_lang$http$Http$StringPart;
 
+var _user$project$Main$getCharFromString = function (string) {
+	return A2(
+		_elm_lang$core$Maybe$withDefault,
+		_elm_lang$core$Native_Utils.chr(' '),
+		A2(
+			_elm_lang$core$Maybe$map,
+			_elm_lang$core$Tuple$first,
+			_elm_lang$core$String$uncons(string)));
+};
 var _user$project$Main$checkIfClicked = function (bool) {
 	return bool ? 'letter-button button-disabled' : 'letter-button';
 };
-var _user$project$Main$displayLetterOrNot = F2(
+var _user$project$Main$reduceLivesIfWrong = F2(
 	function (model, letter) {
-		var log = A2(
-			_elm_lang$core$Debug$log,
-			'regex',
-			A2(
-				_elm_lang$core$Regex$contains,
-				_elm_lang$core$Regex$regex(
-					_elm_lang$core$Basics$toString(letter)),
-				model.guess));
-		var log1 = A2(
-			_elm_lang$core$Debug$log,
-			'letter',
-			_elm_lang$core$String$fromChar(letter));
 		return A2(
 			_elm_lang$core$Regex$contains,
 			_elm_lang$core$Regex$regex(
 				_elm_lang$core$String$fromChar(letter)),
-			model.guess) ? 'display' : 'displayNone';
+			model.currentWord);
+	});
+var _user$project$Main$reduceLives = F2(
+	function (letter, model) {
+		var log = A2(
+			_elm_lang$core$Debug$log,
+			'in reduceLives',
+			A2(_user$project$Main$reduceLivesIfWrong, model, letter));
+		return A2(_user$project$Main$reduceLivesIfWrong, model, letter) ? model : _elm_lang$core$Native_Utils.update(
+			model,
+			{numOfLives: model.numOfLives - 1});
+	});
+var _user$project$Main$correctGuess = F2(
+	function (model, letter) {
+		return A2(
+			_elm_lang$core$Regex$contains,
+			_elm_lang$core$Regex$regex(
+				_elm_lang$core$String$fromChar(letter)),
+			model.guess);
+	});
+var _user$project$Main$displayGuess = F2(
+	function (model, letter) {
+		return A2(_user$project$Main$correctGuess, model, letter) ? 'display' : 'displayNone';
 	});
 var _user$project$Main$renderGuess = F2(
 	function (model, guess) {
@@ -13550,7 +13569,7 @@ var _user$project$Main$renderGuess = F2(
 							{
 								ctor: '::',
 								_0: _elm_lang$html$Html_Attributes$class(
-									A2(_user$project$Main$displayLetterOrNot, model, letter)),
+									A2(_user$project$Main$displayGuess, model, letter)),
 								_1: {ctor: '[]'}
 							},
 							{
@@ -13564,6 +13583,17 @@ var _user$project$Main$renderGuess = F2(
 			},
 			guess);
 	});
+var _user$project$Main$renderNumLives = function (model) {
+	var _p0 = _elm_lang$core$Native_Utils.eq(model.numOfLives, 0);
+	if (_p0 === true) {
+		return 'GAME OVER';
+	} else {
+		return A2(
+			_elm_lang$core$Basics_ops['++'],
+			'Number of lives = ',
+			_elm_lang$core$Basics$toString(model.numOfLives));
+	}
+};
 var _user$project$Main$defaultButtons = function () {
 	var alphabet = {
 		ctor: '::',
@@ -13679,9 +13709,9 @@ var _user$project$Main$defaultButtons = function () {
 }();
 var _user$project$Main$defaultApi = {name: '', capital: ''};
 var _user$project$Main$callMeMaybe = function (maybeThing) {
-	var _p0 = maybeThing;
-	if (_p0.ctor === 'Just') {
-		return _p0._0;
+	var _p1 = maybeThing;
+	if (_p1.ctor === 'Just') {
+		return _p1._0;
 	} else {
 		return _user$project$Main$defaultApi;
 	}
@@ -13723,8 +13753,34 @@ var _user$project$Main$Button = F2(
 var _user$project$Main$ButtonClicked = function (a) {
 	return {ctor: 'ButtonClicked', _0: a};
 };
-var _user$project$Main$renderbutton = function (buttons) {
-	return A2(
+var _user$project$Main$renderbutton = function (model) {
+	return _elm_lang$core$Native_Utils.eq(model.numOfLives, 0) ? A2(
+		_elm_lang$core$List$map,
+		function (everybutton) {
+			return A2(
+				_elm_lang$html$Html$button,
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html_Events$onClick(
+						_user$project$Main$ButtonClicked(everybutton)),
+					_1: {
+						ctor: '::',
+						_0: _elm_lang$html$Html_Attributes$class(
+							_user$project$Main$checkIfClicked(true)),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html_Attributes$disabled(everybutton.guess),
+							_1: {ctor: '[]'}
+						}
+					}
+				},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text(everybutton.letter),
+					_1: {ctor: '[]'}
+				});
+		},
+		model.buttons) : A2(
 		_elm_lang$core$List$map,
 		function (everybutton) {
 			return A2(
@@ -13750,7 +13806,7 @@ var _user$project$Main$renderbutton = function (buttons) {
 					_1: {ctor: '[]'}
 				});
 		},
-		buttons);
+		model.buttons);
 };
 var _user$project$Main$StateIndex = function (a) {
 	return {ctor: 'StateIndex', _0: a};
@@ -13762,43 +13818,41 @@ var _user$project$Main$requestCmd = A2(_elm_lang$http$Http$send, _user$project$M
 var _user$project$Main$init = {ctor: '_Tuple2', _0: _user$project$Main$initialModel, _1: _user$project$Main$requestCmd};
 var _user$project$Main$update = F2(
 	function (msg, model) {
-		var _p1 = msg;
-		switch (_p1.ctor) {
+		var _p2 = msg;
+		switch (_p2.ctor) {
 			case 'FetchWord':
 				return {ctor: '_Tuple2', _0: model, _1: _user$project$Main$requestCmd};
 			case 'ReceiveStates':
-				if (_p1._0.ctor === 'Ok') {
-					var _p2 = _p1._0._0;
+				if (_p2._0.ctor === 'Ok') {
+					var _p3 = _p2._0._0;
 					var getRandomStateIndex = A2(
 						_elm_lang$core$Random$generate,
 						_user$project$Main$StateIndex,
 						A2(
 							_elm_lang$core$Random$int,
 							0,
-							_elm_lang$core$List$length(_p2)));
-					var log = A2(_elm_lang$core$Debug$log, 'states', _p2);
+							_elm_lang$core$List$length(_p3)));
 					return {
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
-							{apiResponse: _p2}),
+							{apiResponse: _p3}),
 						_1: getRandomStateIndex
 					};
 				} else {
-					var log = A2(_elm_lang$core$Debug$log, 'err', _p1._0._0);
+					var log = A2(_elm_lang$core$Debug$log, 'err', _p2._0._0);
 					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 				}
 			case 'StateIndex':
 				var newWord = _user$project$Main$callMeMaybe(
 					_elm_lang$core$List$head(
-						A2(_elm_lang$core$List$drop, _p1._0, model.apiResponse)));
+						A2(_elm_lang$core$List$drop, _p2._0, model.apiResponse)));
 				var newGuessLetters = A2(
 					_elm_lang$core$List$map,
 					function (x) {
 						return _elm_lang$core$Native_Utils.chr(' ');
 					},
 					_elm_lang$core$String$toList(newWord.name));
-				var log = A2(_elm_lang$core$Debug$log, 'index', model);
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
@@ -13810,23 +13864,26 @@ var _user$project$Main$update = F2(
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			default:
-				var _p3 = _p1._0;
+				var _p4 = _p2._0;
 				var updatedButtonList = A2(
 					_elm_lang$core$List$map,
 					function (button) {
-						return _elm_lang$core$Native_Utils.eq(button.letter, _p3.letter) ? _elm_lang$core$Native_Utils.update(
+						return _elm_lang$core$Native_Utils.eq(button.letter, _p4.letter) ? _elm_lang$core$Native_Utils.update(
 							button,
 							{guess: true}) : button;
 					},
 					model.buttons);
 				return {
 					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							guess: A2(_elm_lang$core$Basics_ops['++'], model.guess, _p3.letter),
-							buttons: updatedButtonList
-						}),
+					_0: A2(
+						_user$project$Main$reduceLives,
+						_user$project$Main$getCharFromString(_p4.letter),
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{
+								guess: A2(_elm_lang$core$Basics_ops['++'], model.guess, _p4.letter),
+								buttons: updatedButtonList
+							})),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 		}
@@ -13860,7 +13917,7 @@ var _user$project$Main$view = function (model) {
 					_0: A2(
 						_elm_lang$html$Html$div,
 						{ctor: '[]'},
-						_user$project$Main$renderbutton(model.buttons)),
+						_user$project$Main$renderbutton(model)),
 					_1: {
 						ctor: '::',
 						_0: A2(
@@ -13875,7 +13932,19 @@ var _user$project$Main$view = function (model) {
 								_0: _elm_lang$html$Html$text('Reset Game'),
 								_1: {ctor: '[]'}
 							}),
-						_1: {ctor: '[]'}
+						_1: {
+							ctor: '::',
+							_0: A2(
+								_elm_lang$html$Html$p,
+								{ctor: '[]'},
+								{
+									ctor: '::',
+									_0: _elm_lang$html$Html$text(
+										_user$project$Main$renderNumLives(model)),
+									_1: {ctor: '[]'}
+								}),
+							_1: {ctor: '[]'}
+						}
 					}
 				}
 			}
