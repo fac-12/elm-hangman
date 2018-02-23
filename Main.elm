@@ -8,7 +8,6 @@ import Json.Decode as Json
 import Random
 
 
-
 main : Program Never Model Msg
 main =
     program
@@ -21,7 +20,17 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    ( initialModel, Cmd.none )
+    ( initialModel, requestCmd )
+
+
+type alias Model =
+    { apiResponse : List ApiResponse
+    , buttons : List Button
+    , guessLetters : List Char
+    , numOfLives : Int
+    , currentWord : String
+    , hint : String
+    }
 
 
 initialModel : Model
@@ -31,15 +40,7 @@ initialModel =
     , guessLetters = []
     , numOfLives = 6
     , currentWord = ""
-    }
-
-
-type alias Model =
-    { apiResponse : List ApiResponse
-    , buttons : List Button
-    , guessLetters : List BlankSpace
-    , numOfLives : Int
-    , currentWord : String
+    , hint = ""
     }
 
 
@@ -71,24 +72,31 @@ defaultButtons =
     List.map (\alphabetChar -> { letter = alphabetChar, guess = False }) alphabet
 
 
-type alias BlankSpace =
-    { letter : String
-    , display : Bool
-    }
+
+-- type alias BlankSpace =
+--     { letter : String
+--     , display : Bool
+--     }
 
 
 view : Model -> Html Msg
 view model =
     div []
         [ h1 [] [ text "Hangman Game" ]
+        , div [] <| renderGuess <| model.currentWord
         , div [] (renderbutton defaultButtons)
-        , button [ onClick FetchWord ] [ text "press me!" ]
+        , button [ onClick FetchWord ] [ text "Reset Game" ]
         ]
+
+
+renderGuess : List Char -> List (Html Msg)
+renderGuess guess =
+    List.map (\letter -> p [ class "guessLetter" ] [ text <| toString letter ]) guess
 
 
 renderbutton : List Button -> List (Html Msg)
 renderbutton buttons =
-    List.map (\everybutton -> button [] [ text everybutton.letter ]) buttons
+    List.map (\everybutton -> button [ onClick <| CheckLetter everybutton.letter ] [ text everybutton.letter ]) buttons
 
 
 
@@ -129,12 +137,14 @@ update msg model =
             ( model, Cmd.none )
 
         ReceiveStates (Ok listOfStates) ->
-            let 
-                log = 
+            let
+                log =
                     Debug.log "states" listOfStates
+
+                getRandomStateIndex =
+                    Random.generate StateIndex (Random.int 0 <| List.length listOfStates)
             in
-              
-              ( { model | apiResponse = listOfStates } , Random.generate StateIndex (Random.int 0 (List.length listOfStates)) )
+            ( { model | apiResponse = listOfStates }, getRandomStateIndex )
 
         ReceiveStates (Err err) ->
             let
@@ -143,25 +153,36 @@ update msg model =
             in
             ( model, Cmd.none )
 
-        StateIndex index  ->
+        StateIndex index ->
+            let
+                log =
+                    Debug.log "index" model
 
-            let log = 
-                Debug.log "index" model
-                newWord = callMeMaybe (List.head (List.drop index model.apiResponse))
+                newWord =
+                    callMeMaybe (List.head (List.drop index model.apiResponse))
+
+                newGuessLetters =
+                    List.map (\x -> ' ') <| String.toList newWord.name
             in
+            ( { model | currentWord = newWord.name, hint = newWord.capital, guessLetters = newGuessLetters }, Cmd.none )
 
-            ( { model | currentWord = newWord.name } , Cmd.none )
+        CheckLetter letter ->
+            ( model, Cmd.none )
 
 
 callMeMaybe : Maybe ApiResponse -> ApiResponse
 callMeMaybe maybeThing =
-    case maybeThing of 
-        Just singleState -> singleState
-        Nothing -> defaultApi
+    case maybeThing of
+        Just singleState ->
+            singleState
+
+        Nothing ->
+            defaultApi
 
 
 type Msg
     = FetchWord
     | GuessLetter
     | ReceiveStates (Result Http.Error (List ApiResponse))
-    | StateIndex Int 
+    | StateIndex Int
+    | CheckLetter String

@@ -1,0 +1,6 @@
+.guessLetter {
+  border-bottom: 1px solid black;
+  width: 10px;
+  display: inline-block;
+  margin: 5px; 
+}
