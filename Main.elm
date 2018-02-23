@@ -8,7 +8,6 @@ import Json.Decode as Json
 import Random
 
 
-
 main : Program Never Model Msg
 main =
     program
@@ -21,7 +20,17 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    ( initialModel, Cmd.none )
+    ( initialModel, requestCmd )
+
+
+type alias Model =
+    { apiResponse : List ApiResponse
+    , buttons : List Button
+    , guessLetters : List BlankSpace
+    , numOfLives : Int
+    , currentWord : String
+    , hint : String
+    }
 
 
 initialModel : Model
@@ -31,15 +40,7 @@ initialModel =
     , guessLetters = []
     , numOfLives = 6
     , currentWord = ""
-    }
-
-
-type alias Model =
-    { apiResponse : List ApiResponse
-    , buttons : List Button
-    , guessLetters : List BlankSpace
-    , numOfLives : Int
-    , currentWord : String
+    , hint = ""
     }
 
 
@@ -82,7 +83,7 @@ view model =
     div []
         [ h1 [] [ text "Hangman Game" ]
         , div [] (renderbutton defaultButtons)
-        , button [ onClick FetchWord ] [ text "press me!" ]
+        , button [ onClick FetchWord ] [ text "Reset Game" ]
         ]
 
 
@@ -129,12 +130,14 @@ update msg model =
             ( model, Cmd.none )
 
         ReceiveStates (Ok listOfStates) ->
-            let 
-                log = 
+            let
+                log =
                     Debug.log "states" listOfStates
+
+                getRandomStateIndex =
+                    Random.generate StateIndex (Random.int 0 <| List.length listOfStates)
             in
-              
-              ( { model | apiResponse = listOfStates } , Random.generate StateIndex (Random.int 0 (List.length listOfStates)) )
+            ( { model | apiResponse = listOfStates }, getRandomStateIndex )
 
         ReceiveStates (Err err) ->
             let
@@ -143,25 +146,29 @@ update msg model =
             in
             ( model, Cmd.none )
 
-        StateIndex index  ->
+        StateIndex index ->
+            let
+                log =
+                    Debug.log "index" model
 
-            let log = 
-                Debug.log "index" model
-                newWord = callMeMaybe (List.head (List.drop index model.apiResponse))
+                newWord =
+                    callMeMaybe (List.head (List.drop index model.apiResponse))
             in
-
-            ( { model | currentWord = newWord.name } , Cmd.none )
+            ( { model | currentWord = newWord.name, hint = newWord.capital }, Cmd.none )
 
 
 callMeMaybe : Maybe ApiResponse -> ApiResponse
 callMeMaybe maybeThing =
-    case maybeThing of 
-        Just singleState -> singleState
-        Nothing -> defaultApi
+    case maybeThing of
+        Just singleState ->
+            singleState
+
+        Nothing ->
+            defaultApi
 
 
 type Msg
     = FetchWord
     | GuessLetter
     | ReceiveStates (Result Http.Error (List ApiResponse))
-    | StateIndex Int 
+    | StateIndex Int
