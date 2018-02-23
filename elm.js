@@ -13371,20 +13371,25 @@ var _elm_lang$http$Http$StringPart = F2(
 	});
 var _elm_lang$http$Http$stringPart = _elm_lang$http$Http$StringPart;
 
-var _user$project$Main$renderbutton = function (buttons) {
+var _user$project$Main$renderGuess = function (guess) {
 	return A2(
 		_elm_lang$core$List$map,
-		function (everybutton) {
+		function (letter) {
 			return A2(
-				_elm_lang$html$Html$button,
-				{ctor: '[]'},
+				_elm_lang$html$Html$p,
 				{
 					ctor: '::',
-					_0: _elm_lang$html$Html$text(everybutton.letter),
+					_0: _elm_lang$html$Html_Attributes$class('guessLetter'),
+					_1: {ctor: '[]'}
+				},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text(
+						_elm_lang$core$Basics$toString(letter)),
 					_1: {ctor: '[]'}
 				});
 		},
-		buttons);
+		guess);
 };
 var _user$project$Main$defaultButtons = function () {
 	var alphabet = {
@@ -13542,10 +13547,29 @@ var _user$project$Main$Button = F2(
 	function (a, b) {
 		return {letter: a, guess: b};
 	});
-var _user$project$Main$BlankSpace = F2(
-	function (a, b) {
-		return {letter: a, display: b};
-	});
+var _user$project$Main$CheckLetter = function (a) {
+	return {ctor: 'CheckLetter', _0: a};
+};
+var _user$project$Main$renderbutton = function (buttons) {
+	return A2(
+		_elm_lang$core$List$map,
+		function (everybutton) {
+			return A2(
+				_elm_lang$html$Html$button,
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html_Events$onClick(
+						_user$project$Main$CheckLetter(everybutton.letter)),
+					_1: {ctor: '[]'}
+				},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text(everybutton.letter),
+					_1: {ctor: '[]'}
+				});
+		},
+		buttons);
+};
 var _user$project$Main$StateIndex = function (a) {
 	return {ctor: 'StateIndex', _0: a};
 };
@@ -13584,18 +13608,26 @@ var _user$project$Main$update = F2(
 					var log = A2(_elm_lang$core$Debug$log, 'err', _p1._0._0);
 					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 				}
-			default:
+			case 'StateIndex':
 				var newWord = _user$project$Main$callMeMaybe(
 					_elm_lang$core$List$head(
 						A2(_elm_lang$core$List$drop, _p1._0, model.apiResponse)));
+				var newGuessLetters = A2(
+					_elm_lang$core$List$map,
+					function (x) {
+						return _elm_lang$core$Native_Utils.chr(' ');
+					},
+					_elm_lang$core$String$toList(newWord.name));
 				var log = A2(_elm_lang$core$Debug$log, 'index', model);
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{currentWord: newWord.name, hint: newWord.capital}),
+						{currentWord: newWord.name, hint: newWord.capital, guessLetters: newGuessLetters}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
+			default:
+				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 		}
 	});
 var _user$project$Main$GuessLetter = {ctor: 'GuessLetter'};
@@ -13619,22 +13651,29 @@ var _user$project$Main$view = function (model) {
 				_0: A2(
 					_elm_lang$html$Html$div,
 					{ctor: '[]'},
-					_user$project$Main$renderbutton(_user$project$Main$defaultButtons)),
+					_user$project$Main$renderGuess(model.guessLetters)),
 				_1: {
 					ctor: '::',
 					_0: A2(
-						_elm_lang$html$Html$button,
-						{
-							ctor: '::',
-							_0: _elm_lang$html$Html_Events$onClick(_user$project$Main$FetchWord),
-							_1: {ctor: '[]'}
-						},
-						{
-							ctor: '::',
-							_0: _elm_lang$html$Html$text('Reset Game'),
-							_1: {ctor: '[]'}
-						}),
-					_1: {ctor: '[]'}
+						_elm_lang$html$Html$div,
+						{ctor: '[]'},
+						_user$project$Main$renderbutton(_user$project$Main$defaultButtons)),
+					_1: {
+						ctor: '::',
+						_0: A2(
+							_elm_lang$html$Html$button,
+							{
+								ctor: '::',
+								_0: _elm_lang$html$Html_Events$onClick(_user$project$Main$FetchWord),
+								_1: {ctor: '[]'}
+							},
+							{
+								ctor: '::',
+								_0: _elm_lang$html$Html$text('Reset Game'),
+								_1: {ctor: '[]'}
+							}),
+						_1: {ctor: '[]'}
+					}
 				}
 			}
 		});
@@ -13650,7 +13689,7 @@ var _user$project$Main$main = _elm_lang$html$Html$program(
 var Elm = {};
 Elm['Main'] = Elm['Main'] || {};
 if (typeof _user$project$Main$main !== 'undefined') {
-    _user$project$Main$main(Elm['Main'], 'Main', {"types":{"unions":{"Dict.LeafColor":{"args":[],"tags":{"LBBlack":[],"LBlack":[]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":["Dict.LeafColor"]}},"Main.Msg":{"args":[],"tags":{"ReceiveStates":["Result.Result Http.Error (List Main.ApiResponse)"],"FetchWord":[],"GuessLetter":[],"StateIndex":["Int"]}},"Dict.NColor":{"args":[],"tags":{"BBlack":[],"Red":[],"NBlack":[],"Black":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String"],"NetworkError":[],"Timeout":[],"BadStatus":["Http.Response String"],"BadPayload":["String","Http.Response String"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}},"aliases":{"Http.Response":{"args":["body"],"type":"{ url : String , status : { code : Int, message : String } , headers : Dict.Dict String String , body : body }"},"Main.ApiResponse":{"args":[],"type":"{ name : String, capital : String }"}},"message":"Main.Msg"},"versions":{"elm":"0.18.0"}});
+    _user$project$Main$main(Elm['Main'], 'Main', {"types":{"unions":{"Dict.LeafColor":{"args":[],"tags":{"LBBlack":[],"LBlack":[]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":["Dict.LeafColor"]}},"Main.Msg":{"args":[],"tags":{"ReceiveStates":["Result.Result Http.Error (List Main.ApiResponse)"],"FetchWord":[],"GuessLetter":[],"CheckLetter":["String"],"StateIndex":["Int"]}},"Dict.NColor":{"args":[],"tags":{"BBlack":[],"Red":[],"NBlack":[],"Black":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String"],"NetworkError":[],"Timeout":[],"BadStatus":["Http.Response String"],"BadPayload":["String","Http.Response String"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}},"aliases":{"Http.Response":{"args":["body"],"type":"{ url : String , status : { code : Int, message : String } , headers : Dict.Dict String String , body : body }"},"Main.ApiResponse":{"args":[],"type":"{ name : String, capital : String }"}},"message":"Main.Msg"},"versions":{"elm":"0.18.0"}});
 }
 
 if (typeof define === "function" && define['amd'])

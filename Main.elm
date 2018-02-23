@@ -26,7 +26,7 @@ init =
 type alias Model =
     { apiResponse : List ApiResponse
     , buttons : List Button
-    , guessLetters : List BlankSpace
+    , guessLetters : List Char
     , numOfLives : Int
     , currentWord : String
     , hint : String
@@ -72,24 +72,31 @@ defaultButtons =
     List.map (\alphabetChar -> { letter = alphabetChar, guess = False }) alphabet
 
 
-type alias BlankSpace =
-    { letter : String
-    , display : Bool
-    }
+
+-- type alias BlankSpace =
+--     { letter : String
+--     , display : Bool
+--     }
 
 
 view : Model -> Html Msg
 view model =
     div []
         [ h1 [] [ text "Hangman Game" ]
+        , div [] <| renderGuess <| model.currentWord
         , div [] (renderbutton defaultButtons)
         , button [ onClick FetchWord ] [ text "Reset Game" ]
         ]
 
 
+renderGuess : List Char -> List (Html Msg)
+renderGuess guess =
+    List.map (\letter -> p [ class "guessLetter" ] [ text <| toString letter ]) guess
+
+
 renderbutton : List Button -> List (Html Msg)
 renderbutton buttons =
-    List.map (\everybutton -> button [] [ text everybutton.letter ]) buttons
+    List.map (\everybutton -> button [ onClick <| CheckLetter everybutton.letter ] [ text everybutton.letter ]) buttons
 
 
 
@@ -153,8 +160,14 @@ update msg model =
 
                 newWord =
                     callMeMaybe (List.head (List.drop index model.apiResponse))
+
+                newGuessLetters =
+                    List.map (\x -> ' ') <| String.toList newWord.name
             in
-            ( { model | currentWord = newWord.name, hint = newWord.capital }, Cmd.none )
+            ( { model | currentWord = newWord.name, hint = newWord.capital, guessLetters = newGuessLetters }, Cmd.none )
+
+        CheckLetter letter ->
+            ( model, Cmd.none )
 
 
 callMeMaybe : Maybe ApiResponse -> ApiResponse
@@ -172,3 +185,4 @@ type Msg
     | GuessLetter
     | ReceiveStates (Result Http.Error (List ApiResponse))
     | StateIndex Int
+    | CheckLetter String
