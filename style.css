@@ -4,3 +4,11 @@
   display: inline-block;
   margin: 5px; 
 }
+
+.displayNone {
+	display: none;
+}
+
+.display {
+	display :inline-block;
+}
