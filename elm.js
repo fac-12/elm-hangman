@@ -6142,6 +6142,126 @@ var _elm_lang$core$Json_Decode$bool = _elm_lang$core$Native_Json.decodePrimitive
 var _elm_lang$core$Json_Decode$string = _elm_lang$core$Native_Json.decodePrimitive('string');
 var _elm_lang$core$Json_Decode$Decoder = {ctor: 'Decoder'};
 
+//import Maybe, Native.List //
+
+var _elm_lang$core$Native_Regex = function() {
+
+function escape(str)
+{
+	return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+}
+function caseInsensitive(re)
+{
+	return new RegExp(re.source, 'gi');
+}
+function regex(raw)
+{
+	return new RegExp(raw, 'g');
+}
+
+function contains(re, string)
+{
+	return string.match(re) !== null;
+}
+
+function find(n, re, str)
+{
+	n = n.ctor === 'All' ? Infinity : n._0;
+	var out = [];
+	var number = 0;
+	var string = str;
+	var lastIndex = re.lastIndex;
+	var prevLastIndex = -1;
+	var result;
+	while (number++ < n && (result = re.exec(string)))
+	{
+		if (prevLastIndex === re.lastIndex) break;
+		var i = result.length - 1;
+		var subs = new Array(i);
+		while (i > 0)
+		{
+			var submatch = result[i];
+			subs[--i] = submatch === undefined
+				? _elm_lang$core$Maybe$Nothing
+				: _elm_lang$core$Maybe$Just(submatch);
+		}
+		out.push({
+			match: result[0],
+			submatches: _elm_lang$core$Native_List.fromArray(subs),
+			index: result.index,
+			number: number
+		});
+		prevLastIndex = re.lastIndex;
+	}
+	re.lastIndex = lastIndex;
+	return _elm_lang$core$Native_List.fromArray(out);
+}
+
+function replace(n, re, replacer, string)
+{
+	n = n.ctor === 'All' ? Infinity : n._0;
+	var count = 0;
+	function jsReplacer(match)
+	{
+		if (count++ >= n)
+		{
+			return match;
+		}
+		var i = arguments.length - 3;
+		var submatches = new Array(i);
+		while (i > 0)
+		{
+			var submatch = arguments[i];
+			submatches[--i] = submatch === undefined
+				? _elm_lang$core$Maybe$Nothing
+				: _elm_lang$core$Maybe$Just(submatch);
+		}
+		return replacer({
+			match: match,
+			submatches: _elm_lang$core$Native_List.fromArray(submatches),
+			index: arguments[arguments.length - 2],
+			number: count
+		});
+	}
+	return string.replace(re, jsReplacer);
+}
+
+function split(n, re, str)
+{
+	n = n.ctor === 'All' ? Infinity : n._0;
+	if (n === Infinity)
+	{
+		return _elm_lang$core$Native_List.fromArray(str.split(re));
+	}
+	var string = str;
+	var result;
+	var out = [];
+	var start = re.lastIndex;
+	var restoreLastIndex = re.lastIndex;
+	while (n--)
+	{
+		if (!(result = re.exec(string))) break;
+		out.push(string.slice(start, result.index));
+		start = re.lastIndex;
+	}
+	out.push(string.slice(start));
+	re.lastIndex = restoreLastIndex;
+	return _elm_lang$core$Native_List.fromArray(out);
+}
+
+return {
+	regex: regex,
+	caseInsensitive: caseInsensitive,
+	escape: escape,
+
+	contains: F2(contains),
+	find: F3(find),
+	replace: F4(replace),
+	split: F3(split)
+};
+
+}();
+
 var _elm_lang$core$Tuple$mapSecond = F2(
 	function (func, _p0) {
 		var _p1 = _p0;
@@ -6547,6 +6667,23 @@ var _elm_lang$core$Random$cmdMap = F2(
 			A2(_elm_lang$core$Random$map, func, _p79._0));
 	});
 _elm_lang$core$Native_Platform.effectManagers['Random'] = {pkg: 'elm-lang/core', init: _elm_lang$core$Random$init, onEffects: _elm_lang$core$Random$onEffects, onSelfMsg: _elm_lang$core$Random$onSelfMsg, tag: 'cmd', cmdMap: _elm_lang$core$Random$cmdMap};
+
+var _elm_lang$core$Regex$split = _elm_lang$core$Native_Regex.split;
+var _elm_lang$core$Regex$replace = _elm_lang$core$Native_Regex.replace;
+var _elm_lang$core$Regex$find = _elm_lang$core$Native_Regex.find;
+var _elm_lang$core$Regex$contains = _elm_lang$core$Native_Regex.contains;
+var _elm_lang$core$Regex$caseInsensitive = _elm_lang$core$Native_Regex.caseInsensitive;
+var _elm_lang$core$Regex$regex = _elm_lang$core$Native_Regex.regex;
+var _elm_lang$core$Regex$escape = _elm_lang$core$Native_Regex.escape;
+var _elm_lang$core$Regex$Match = F4(
+	function (a, b, c, d) {
+		return {match: a, submatches: b, index: c, number: d};
+	});
+var _elm_lang$core$Regex$Regex = {ctor: 'Regex'};
+var _elm_lang$core$Regex$AtMost = function (a) {
+	return {ctor: 'AtMost', _0: a};
+};
+var _elm_lang$core$Regex$All = {ctor: 'All'};
 
 var _elm_lang$virtual_dom$VirtualDom_Debug$wrap;
 var _elm_lang$virtual_dom$VirtualDom_Debug$wrapWithFlags;
@@ -13371,26 +13508,59 @@ var _elm_lang$http$Http$StringPart = F2(
 	});
 var _elm_lang$http$Http$stringPart = _elm_lang$http$Http$StringPart;
 
-var _user$project$Main$renderGuess = function (guess) {
-	return A2(
-		_elm_lang$core$List$map,
-		function (letter) {
-			return A2(
-				_elm_lang$html$Html$p,
-				{
-					ctor: '::',
-					_0: _elm_lang$html$Html_Attributes$class('guessLetter'),
-					_1: {ctor: '[]'}
-				},
-				{
-					ctor: '::',
-					_0: _elm_lang$html$Html$text(
-						_elm_lang$core$Basics$toString(letter)),
-					_1: {ctor: '[]'}
-				});
-		},
-		guess);
-};
+var _user$project$Main$displayLetterOrNot = F2(
+	function (model, letter) {
+		var log = A2(
+			_elm_lang$core$Debug$log,
+			'regex',
+			A2(
+				_elm_lang$core$Regex$contains,
+				_elm_lang$core$Regex$regex(
+					_elm_lang$core$Basics$toString(letter)),
+				model.guess));
+		var log1 = A2(
+			_elm_lang$core$Debug$log,
+			'letter',
+			_elm_lang$core$String$fromChar(letter));
+		return A2(
+			_elm_lang$core$Regex$contains,
+			_elm_lang$core$Regex$regex(
+				_elm_lang$core$String$fromChar(letter)),
+			model.guess) ? 'display' : 'displayNone';
+	});
+var _user$project$Main$renderGuess = F2(
+	function (model, guess) {
+		return A2(
+			_elm_lang$core$List$map,
+			function (letter) {
+				return A2(
+					_elm_lang$html$Html$p,
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html_Attributes$class('guessLetter'),
+						_1: {ctor: '[]'}
+					},
+					{
+						ctor: '::',
+						_0: A2(
+							_elm_lang$html$Html$span,
+							{
+								ctor: '::',
+								_0: _elm_lang$html$Html_Attributes$class(
+									A2(_user$project$Main$displayLetterOrNot, model, letter)),
+								_1: {ctor: '[]'}
+							},
+							{
+								ctor: '::',
+								_0: _elm_lang$html$Html$text(
+									_elm_lang$core$Basics$toString(letter)),
+								_1: {ctor: '[]'}
+							}),
+						_1: {ctor: '[]'}
+					});
+			},
+			guess);
+	});
 var _user$project$Main$defaultButtons = function () {
 	var alphabet = {
 		ctor: '::',
@@ -13520,14 +13690,14 @@ var _user$project$Main$initialModel = {
 		_1: {ctor: '[]'}
 	},
 	buttons: {ctor: '[]'},
-	guessLetters: {ctor: '[]'},
 	numOfLives: 6,
 	currentWord: '',
-	hint: ''
+	hint: '',
+	guess: ''
 };
 var _user$project$Main$Model = F6(
 	function (a, b, c, d, e, f) {
-		return {apiResponse: a, buttons: b, guessLetters: c, numOfLives: d, currentWord: e, hint: f};
+		return {apiResponse: a, buttons: b, numOfLives: c, currentWord: d, hint: e, guess: f};
 	});
 var _user$project$Main$ApiResponse = F2(
 	function (a, b) {
@@ -13547,8 +13717,8 @@ var _user$project$Main$Button = F2(
 	function (a, b) {
 		return {letter: a, guess: b};
 	});
-var _user$project$Main$CheckLetter = function (a) {
-	return {ctor: 'CheckLetter', _0: a};
+var _user$project$Main$UpdateGuess = function (a) {
+	return {ctor: 'UpdateGuess', _0: a};
 };
 var _user$project$Main$renderbutton = function (buttons) {
 	return A2(
@@ -13559,7 +13729,7 @@ var _user$project$Main$renderbutton = function (buttons) {
 				{
 					ctor: '::',
 					_0: _elm_lang$html$Html_Events$onClick(
-						_user$project$Main$CheckLetter(everybutton.letter)),
+						_user$project$Main$UpdateGuess(everybutton.letter)),
 					_1: {ctor: '[]'}
 				},
 				{
@@ -13584,8 +13754,6 @@ var _user$project$Main$update = F2(
 		switch (_p1.ctor) {
 			case 'FetchWord':
 				return {ctor: '_Tuple2', _0: model, _1: _user$project$Main$requestCmd};
-			case 'GuessLetter':
-				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 			case 'ReceiveStates':
 				if (_p1._0.ctor === 'Ok') {
 					var _p2 = _p1._0._0;
@@ -13623,14 +13791,24 @@ var _user$project$Main$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{currentWord: newWord.name, hint: newWord.capital, guessLetters: newGuessLetters}),
+						{
+							currentWord: _elm_lang$core$String$toUpper(newWord.name),
+							hint: newWord.capital
+						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
 			default:
-				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							guess: A2(_elm_lang$core$Basics_ops['++'], model.guess, _p1._0)
+						}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
 		}
 	});
-var _user$project$Main$GuessLetter = {ctor: 'GuessLetter'};
 var _user$project$Main$FetchWord = {ctor: 'FetchWord'};
 var _user$project$Main$view = function (model) {
 	return A2(
@@ -13651,7 +13829,10 @@ var _user$project$Main$view = function (model) {
 				_0: A2(
 					_elm_lang$html$Html$div,
 					{ctor: '[]'},
-					_user$project$Main$renderGuess(model.guessLetters)),
+					A2(
+						_user$project$Main$renderGuess,
+						model,
+						_elm_lang$core$String$toList(model.currentWord))),
 				_1: {
 					ctor: '::',
 					_0: A2(
@@ -13689,7 +13870,7 @@ var _user$project$Main$main = _elm_lang$html$Html$program(
 var Elm = {};
 Elm['Main'] = Elm['Main'] || {};
 if (typeof _user$project$Main$main !== 'undefined') {
-    _user$project$Main$main(Elm['Main'], 'Main', {"types":{"unions":{"Dict.LeafColor":{"args":[],"tags":{"LBBlack":[],"LBlack":[]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":["Dict.LeafColor"]}},"Main.Msg":{"args":[],"tags":{"ReceiveStates":["Result.Result Http.Error (List Main.ApiResponse)"],"FetchWord":[],"GuessLetter":[],"CheckLetter":["String"],"StateIndex":["Int"]}},"Dict.NColor":{"args":[],"tags":{"BBlack":[],"Red":[],"NBlack":[],"Black":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String"],"NetworkError":[],"Timeout":[],"BadStatus":["Http.Response String"],"BadPayload":["String","Http.Response String"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}},"aliases":{"Http.Response":{"args":["body"],"type":"{ url : String , status : { code : Int, message : String } , headers : Dict.Dict String String , body : body }"},"Main.ApiResponse":{"args":[],"type":"{ name : String, capital : String }"}},"message":"Main.Msg"},"versions":{"elm":"0.18.0"}});
+    _user$project$Main$main(Elm['Main'], 'Main', {"types":{"unions":{"Dict.LeafColor":{"args":[],"tags":{"LBBlack":[],"LBlack":[]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":["Dict.LeafColor"]}},"Main.Msg":{"args":[],"tags":{"ReceiveStates":["Result.Result Http.Error (List Main.ApiResponse)"],"FetchWord":[],"UpdateGuess":["String"],"StateIndex":["Int"]}},"Dict.NColor":{"args":[],"tags":{"BBlack":[],"Red":[],"NBlack":[],"Black":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String"],"NetworkError":[],"Timeout":[],"BadStatus":["Http.Response String"],"BadPayload":["String","Http.Response String"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}}},"aliases":{"Http.Response":{"args":["body"],"type":"{ url : String , status : { code : Int, message : String } , headers : Dict.Dict String String , body : body }"},"Main.ApiResponse":{"args":[],"type":"{ name : String, capital : String }"}},"message":"Main.Msg"},"versions":{"elm":"0.18.0"}});
 }
 
 if (typeof define === "function" && define['amd'])

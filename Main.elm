@@ -6,6 +6,7 @@ import Html.Events exposing (..)
 import Http exposing (..)
 import Json.Decode as Json
 import Random
+import Regex
 
 
 main : Program Never Model Msg
@@ -26,10 +27,10 @@ init =
 type alias Model =
     { apiResponse : List ApiResponse
     , buttons : List Button
-    , guessLetters : List Char
     , numOfLives : Int
     , currentWord : String
     , hint : String
+    , guess : String
     }
 
 
@@ -37,10 +38,10 @@ initialModel : Model
 initialModel =
     { apiResponse = [ { name = "", capital = "" } ]
     , buttons = []
-    , guessLetters = []
     , numOfLives = 6
     , currentWord = ""
     , hint = ""
+    , guess = ""
     }
 
 
@@ -72,31 +73,35 @@ defaultButtons =
     List.map (\alphabetChar -> { letter = alphabetChar, guess = False }) alphabet
 
 
-
--- type alias BlankSpace =
---     { letter : String
---     , display : Bool
---     }
-
-
 view : Model -> Html Msg
 view model =
     div []
         [ h1 [] [ text "Hangman Game" ]
-        , div [] <| renderGuess <| model.currentWord
+        , div [] <| renderGuess model <| String.toList model.currentWord
         , div [] (renderbutton defaultButtons)
         , button [ onClick FetchWord ] [ text "Reset Game" ]
         ]
 
 
-renderGuess : List Char -> List (Html Msg)
-renderGuess guess =
-    List.map (\letter -> p [ class "guessLetter" ] [ text <| toString letter ]) guess
+renderGuess : Model -> List Char -> List (Html Msg)
+renderGuess model guess =
+    List.map (\letter -> p [ class "guessLetter" ] [ 
+                            span [ class <| displayLetterOrNot model letter ] [text <| toString letter ]
+                            ]) guess
+
+
+
+displayLetterOrNot : Model -> Char -> String
+displayLetterOrNot model letter = 
+    let log1 = Debug.log "letter" (String.fromChar letter)
+        log = Debug.log "regex" (Regex.contains (Regex.regex <| toString letter) model.guess)
+    in 
+        if Regex.contains (Regex.regex <| String.fromChar letter) model.guess then "display" else "displayNone" 
 
 
 renderbutton : List Button -> List (Html Msg)
 renderbutton buttons =
-    List.map (\everybutton -> button [ onClick <| CheckLetter everybutton.letter ] [ text everybutton.letter ]) buttons
+    List.map (\everybutton -> button [ onClick <| UpdateGuess everybutton.letter ] [ text everybutton.letter ]) buttons
 
 
 
@@ -133,9 +138,6 @@ update msg model =
         FetchWord ->
             ( model, requestCmd )
 
-        GuessLetter ->
-            ( model, Cmd.none )
-
         ReceiveStates (Ok listOfStates) ->
             let
                 log =
@@ -164,10 +166,11 @@ update msg model =
                 newGuessLetters =
                     List.map (\x -> ' ') <| String.toList newWord.name
             in
-            ( { model | currentWord = newWord.name, hint = newWord.capital, guessLetters = newGuessLetters }, Cmd.none )
+            ( { model | currentWord = String.toUpper newWord.name, hint = newWord.capital }, Cmd.none )
 
-        CheckLetter letter ->
-            ( model, Cmd.none )
+        UpdateGuess letter -> 
+
+            ( { model | guess = model.guess ++ letter }, Cmd.none )
 
 
 callMeMaybe : Maybe ApiResponse -> ApiResponse
@@ -182,7 +185,6 @@ callMeMaybe maybeThing =
 
 type Msg
     = FetchWord
-    | GuessLetter
     | ReceiveStates (Result Http.Error (List ApiResponse))
     | StateIndex Int
-    | CheckLetter String
+    | UpdateGuess String
