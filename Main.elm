@@ -78,9 +78,20 @@ view model =
     div []
         [ h1 [] [ text "Hangman Game" ]
         , div [] <| renderGuess model <| String.toList model.currentWord
-        , div [] (renderbutton model.buttons)
+        , div [] (renderbutton model)
         , button [ onClick FetchWord ] [ text "Reset Game" ]
+        , p [] [ text <| renderNumLives model ]
         ]
+
+
+renderNumLives : Model -> String
+renderNumLives model =
+    case model.numOfLives == 0 of
+        True ->
+            "GAME OVER"
+
+        False ->
+            "Number of lives = " ++ toString model.numOfLives
 
 
 renderGuess : Model -> List Char -> List (Html Msg)
@@ -88,30 +99,48 @@ renderGuess model guess =
     List.map
         (\letter ->
             p [ class "guessLetter" ]
-                [ span [ class <| displayLetterOrNot model letter ] [ text <| toString letter ]
+                [ span [ class <| displayGuess model letter ] [ text <| toString letter ]
                 ]
         )
         guess
 
 
-displayLetterOrNot : Model -> Char -> String
-displayLetterOrNot model letter =
-    let
-        log1 =
-            Debug.log "letter" (String.fromChar letter)
+correctGuess : Model -> Char -> Bool
+correctGuess model letter =
+    Regex.contains (Regex.regex <| String.fromChar letter) model.guess
 
-        log =
-            Debug.log "regex" (Regex.contains (Regex.regex <| toString letter) model.guess)
-    in
-    if Regex.contains (Regex.regex <| String.fromChar letter) model.guess then
+
+reduceLivesIfWrong : Model -> Char -> Bool
+reduceLivesIfWrong model letter =
+    Regex.contains (Regex.regex <| String.fromChar letter) model.currentWord
+
+
+displayGuess : Model -> Char -> String
+displayGuess model letter =
+    if correctGuess model letter then
         "display"
     else
         "displayNone"
 
 
-renderbutton : List Button -> List (Html Msg)
-renderbutton buttons =
-    List.map (\everybutton -> button [ onClick <| ButtonClicked everybutton, class <| checkIfClicked everybutton.guess, disabled everybutton.guess ] [ text everybutton.letter ]) buttons
+reduceLives : Char -> Model -> Model
+reduceLives letter model =
+    let
+        log =
+            Debug.log "in reduceLives" (reduceLivesIfWrong model letter)
+    in
+    if reduceLivesIfWrong model letter then
+        model
+    else
+        { model | numOfLives = model.numOfLives - 1 }
+
+
+renderbutton : Model -> List (Html Msg)
+renderbutton model =
+    if model.numOfLives == 0 then
+        List.map (\everybutton -> button [ onClick <| ButtonClicked everybutton, class <| checkIfClicked True, disabled everybutton.guess ] [ text everybutton.letter ]) model.buttons
+    else
+        List.map (\everybutton -> button [ onClick <| ButtonClicked everybutton, class <| checkIfClicked everybutton.guess, disabled everybutton.guess ] [ text everybutton.letter ]) model.buttons
 
 
 checkIfClicked : Bool -> String
@@ -150,6 +179,14 @@ stateListDecoder =
     Json.list statesDecoder
 
 
+getCharFromString : String -> Char
+getCharFromString string =
+    string
+        |> String.uncons
+        |> Maybe.map Tuple.first
+        |> Maybe.withDefault ' '
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -158,9 +195,6 @@ update msg model =
 
         ReceiveStates (Ok listOfStates) ->
             let
-                log =
-                    Debug.log "states" listOfStates
-
                 getRandomStateIndex =
                     Random.generate StateIndex (Random.int 0 <| List.length listOfStates)
             in
@@ -175,9 +209,6 @@ update msg model =
 
         StateIndex index ->
             let
-                log =
-                    Debug.log "index" model
-
                 newWord =
                     callMeMaybe (List.head (List.drop index model.apiResponse))
 
@@ -198,7 +229,7 @@ update msg model =
                         )
                         model.buttons
             in
-            ( { model | guess = model.guess ++ clickedButton.letter, buttons = updatedButtonList }, Cmd.none )
+            ( { model | guess = model.guess ++ clickedButton.letter, buttons = updatedButtonList } |> reduceLives (getCharFromString clickedButton.letter), Cmd.none )
 
 
 callMeMaybe : Maybe ApiResponse -> ApiResponse
